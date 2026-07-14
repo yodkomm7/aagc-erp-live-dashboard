@@ -5,7 +5,7 @@ window.ERP_DATA = {
   meta: {
     sample: false,
     partial: true,
-    note: "เลขจริง: ยอดรับชำระสะสมปี 2026 (Receipt List). PO/GR: รายงานคืนค่าว่างที่ scope รวม (ต้องเลือก Organization รายโปรเจกต์). มูลค่าสต็อก: Cost ถูกซ่อนใน web viewer (0.00) ต้องใช้ xlsx export เหมือน dashboard เดิม",
+    note: "เลขจริง: รับชำระ + PO สะสม 2026 (ทุกโปรเจกต์). GR: รายงาน RS detail หนักมากกำลังหาวิธีเบากว่า. มูลค่าสต็อก: Cost ซ่อนใน web viewer ต้องใช้ xlsx export",
     updated: "2026-07-13T14:50:00+07:00",
     period_ytd: "01/01/2026 - 13/07/2026",
     source: "Pojjaman ERP (aagc.on.lk)",
@@ -20,7 +20,7 @@ window.ERP_DATA = {
     receipt_retention: 8120712.04,
     ar_outstanding:    116010171.48,
     sales_billing_mtd: null,
-    po_mtd:            null,
+    po_ytd:            186613875.39,
     gr_mtd:            null,
     gr_outstanding:    null
   },
