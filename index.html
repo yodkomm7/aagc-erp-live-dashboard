@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AAG Corporation — ERP Live Dashboard</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+  :root{
+    --bg:#0f172a; --panel:#1e293b; --panel2:#273449; --line:#334155;
+    --text:#e2e8f0; --muted:#94a3b8;
+    --blue:#38bdf8; --green:#34d399; --amber:#fbbf24; --red:#f87171;
+    --purple:#a78bfa; --pink:#f472b6;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:"Segoe UI","Sarabun",system-ui,sans-serif;background:var(--bg);color:var(--text);padding:20px 22px 60px}
+  h1{font-size:22px;font-weight:700}
+  h2{font-size:15px;font-weight:600;margin:24px 0 10px;color:var(--text)}
+  h2 .pill{font-size:11px;font-weight:600;padding:2px 9px;border-radius:20px;margin-left:8px;vertical-align:middle}
+  .pill.real{background:#064e3b;color:#6ee7b7}
+  .pill.pend{background:#78350f;color:#fcd34d}
+  .sub{color:var(--muted);font-size:13px;margin-top:2px}
+  header{display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:12px;margin-bottom:14px}
+  .meta{text-align:right;font-size:12px;color:var(--muted);line-height:1.7}
+  .dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--green);margin-right:5px;vertical-align:middle}
+  .banner{background:#78350f;border:1px solid #b45309;color:#fde68a;padding:9px 14px;border-radius:8px;font-size:13px;margin-bottom:8px;display:none}
+  .banner.show{display:block}
+  .grid{display:grid;gap:14px}
+  .k4{grid-template-columns:repeat(4,1fr)}
+  @media(max-width:900px){.k4{grid-template-columns:repeat(2,1fr)}}
+  @media(max-width:520px){.k4{grid-template-columns:1fr}}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:15px 16px}
+  .card.pending{opacity:.72;border-style:dashed}
+  .card .lab{font-size:12px;color:var(--muted);margin-bottom:8px;line-height:1.4;min-height:32px}
+  .card .val{font-size:21px;font-weight:700}
+  .card .val.wait{font-size:14px;font-weight:500;color:var(--amber)}
+  .card .unit{font-size:12px;color:var(--muted);font-weight:400;margin-left:3px}
+  .card .tag{display:inline-block;margin-top:8px;font-size:11px;padding:2px 8px;border-radius:20px;background:var(--panel2);color:var(--muted)}
+  .bar{height:3px;border-radius:3px;margin-top:10px;opacity:.85}
+  .charts{grid-template-columns:1fr 1fr;margin-top:6px}
+  @media(max-width:900px){.charts{grid-template-columns:1fr}}
+  .chartcard{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px 18px 14px}
+  .chartcard h3{font-size:14px;font-weight:600;margin-bottom:4px}
+  .chartcard .note{font-size:11px;color:var(--muted);margin-bottom:12px}
+  .chartwrap{position:relative;height:240px}
+  .waitbox{height:200px;display:flex;align-items:center;justify-content:center;color:var(--muted);
+    border:1px dashed var(--line);border-radius:10px;font-size:13px;text-align:center;line-height:1.7}
+  .src{color:var(--muted);font-size:11px;margin-top:26px;text-align:center;line-height:1.9}
+  .src code{background:var(--panel2);padding:1px 6px;border-radius:4px;color:var(--blue)}
+</style>
+</head>
+<body>
+<header>
+  <div>
+    <h1>🏢 AAG Corporation — ERP Live Dashboard</h1>
+    <div class="sub">รายได้ (รับชำระ) · สต็อก · จัดซื้อ/รับเข้าคลัง — ดึงจาก Pojjaman ERP · refresh ทุกเช้า · แยกอิสระจากหน้า Stock Remaining เดิม</div>
+  </div>
+  <div class="meta">
+    <div><span class="dot"></span><span id="statusTxt">LIVE</span></div>
+    <div>อัปเดตล่าสุด: <b id="updated">—</b></div>
+    <div>ช่วงข้อมูล (YTD): <b id="ytd">—</b></div>
+    <div>Scope: <span id="source">—</span></div>
+  </div>
+</header>
+
+<div class="banner" id="partialBanner"></div>
+
+<!-- ===== รายได้ (ข้อมูลจริง) ===== -->
+<h2>💰 รายได้ / รับชำระ <span class="pill real">ข้อมูลจริงจาก ERP</span></h2>
+<div class="grid k4">
+  <div class="card"><div class="lab">ยอดรับชำระสะสม ปี 2026 (รวม VAT)</div><div class="val" id="k_receipt">—</div><div class="tag">Receipt List · YTD · ทุกโปรเจกต์</div><div class="bar" style="background:var(--green)"></div></div>
+  <div class="card"><div class="lab">จำนวนใบเสร็จ (YTD)</div><div class="val" id="k_count">—</div><div class="tag">ฉบับ</div><div class="bar" style="background:var(--purple)"></div></div>
+  <div class="card"><div class="lab">ยอดคงค้าง AR (Balance)</div><div class="val" id="k_arout">—</div><div class="tag">ลูกหนี้คงเหลือ</div><div class="bar" style="background:var(--amber)"></div></div>
+  <div class="card"><div class="lab">Retention (เงินประกันผลงาน)</div><div class="val" id="k_ret">—</div><div class="tag">หัก ณ ที่รับ</div><div class="bar" style="background:var(--blue)"></div></div>
+</div>
+
+<!-- ===== รอ sync ===== -->
+<h2>⏳ สต็อก · จัดซื้อ · รับเข้าคลัง <span class="pill pend">รอ sync ครั้งถัดไป</span></h2>
+<div class="grid k4">
+  <div class="card pending"><div class="lab">📦 มูลค่าสินค้าคงคลัง</div><div class="val wait" id="k_stock">รอ sync</div><div class="tag">ST_StockRemainingReport</div><div class="bar" style="background:var(--blue)"></div></div>
+  <div class="card pending"><div class="lab">🛒 ยอดสั่งซื้อ (PO) เดือนนี้</div><div class="val wait" id="k_po">รอ sync</div><div class="tag">PUR_PODetailReport</div><div class="bar" style="background:var(--amber)"></div></div>
+  <div class="card pending"><div class="lab">📥 รับเข้าคลัง (GR) เดือนนี้</div><div class="val wait" id="k_gr">รอ sync</div><div class="tag">PUR_RSDetailReport</div><div class="bar" style="background:var(--pink)"></div></div>
+  <div class="card pending"><div class="lab">⏳ ค้างรับเข้าคลัง</div><div class="val wait" id="k_out">รอ sync</div><div class="tag">PUR_RSRemainDetailReport</div><div class="bar" style="background:var(--red)"></div></div>
+</div>
+
+<!-- ===== CHARTS ===== -->
+<h2>📈 แนวโน้มรายเดือน</h2>
+<div class="grid charts">
+  <div class="chartcard">
+    <h3>ยอดรับชำระรายเดือน</h3>
+    <div class="note">Receipt (รวม VAT) รายเดือน (บาท)</div>
+    <div id="salesArea" class="chartwrap"><canvas id="salesChart"></canvas></div>
+  </div>
+  <div class="chartcard">
+    <h3>จัดซื้อรายเดือน — PO vs รับเข้าคลัง</h3>
+    <div class="note">ยอดสั่งซื้อ vs ของที่รับเข้าจริง (บาท)</div>
+    <div id="purArea" class="chartwrap"><canvas id="purChart"></canvas></div>
+  </div>
+  <div class="chartcard">
+    <h3>มูลค่าสินค้าคงคลัง — แนวโน้ม</h3>
+    <div class="note">Bal Amount รายเดือน (บาท)</div>
+    <div id="stockArea" class="chartwrap"><canvas id="stockChart"></canvas></div>
+  </div>
+  <div class="chartcard">
+    <h3>Top Suppliers เดือนนี้</h3>
+    <div class="note">มูลค่า PO / GR รายผู้ขาย (บาท)</div>
+    <div id="supArea" class="chartwrap"><canvas id="supChart"></canvas></div>
+  </div>
+</div>
+
+<div class="src">
+  รายงานต้นทาง (Pojjaman ERP): รายได้ <code>AR_ReceiptListReport</code> · สต็อก <code>ST_StockRemainingReport</code> · จัดซื้อ <code>PUR_PODetailReport</code> · รับเข้า <code>PUR_RSDetailReport</code> · ค้างรับ <code>PUR_RSRemainDetailReport</code><br>
+  หมายเหตุ: AR Billing ในระบบว่าง — บริษัทบันทึกรายได้ผ่าน Receipt (รับชำระ) · dashboard นี้แยกอิสระจากหน้า Stock Remaining เดิม
+</div>
+
+<script src="erp_data.js"></script>
+<script>
+const D = window.ERP_DATA || {};
+const baht = n => (n==null? null : "฿" + Number(n).toLocaleString("en-US",{maximumFractionDigits:0}));
+const M    = n => (n>=1e6 ? (n/1e6).toFixed(1)+" ล" : (n/1e3).toFixed(0)+" พ");
+const set  = (id,v)=>{ const e=document.getElementById(id); if(e) e.innerHTML = (v==null?'<span class="wait">รอ sync</span>':v); };
+const G="#94a3b8", GRID="rgba(148,163,184,.12)";
+Chart.defaults.color=G; Chart.defaults.font.family="'Sarabun','Segoe UI',sans-serif";
+
+// meta
+if(D.meta){
+  document.getElementById("updated").textContent = new Date(D.meta.updated).toLocaleString("th-TH",{dateStyle:"medium",timeStyle:"short"});
+  document.getElementById("ytd").textContent = D.meta.period_ytd || "—";
+  document.getElementById("source").textContent = D.meta.org || "—";
+  if(D.meta.partial){
+    const b=document.getElementById("partialBanner");
+    b.classList.add("show"); b.innerHTML = "ℹ️ "+ (D.meta.note||"ข้อมูลบางส่วนรอ sync");
+    document.getElementById("statusTxt").textContent="PARTIAL";
+    document.querySelector(".dot").style.background="var(--amber)";
+  }
+}
+// KPI (real)
+if(D.kpi){
+  const k=D.kpi;
+  set("k_receipt", baht(k.sales_receipt_ytd)+(k.sales_receipt_ytd!=null?'<span class="unit">บาท</span>':''));
+  set("k_count",   k.receipt_count!=null? k.receipt_count.toLocaleString()+'<span class="unit">ฉบับ</span>' : null);
+  set("k_arout",   baht(k.ar_outstanding)+(k.ar_outstanding!=null?'<span class="unit">บาท</span>':''));
+  set("k_ret",     baht(k.receipt_retention)+(k.receipt_retention!=null?'<span class="unit">บาท</span>':''));
+  // pending
+  set("k_stock", baht(k.stock_value)); set("k_po", baht(k.po_mtd));
+  set("k_gr", baht(k.gr_mtd)); set("k_out", baht(k.gr_outstanding));
+}
+const baseOpts = {responsive:true,maintainAspectRatio:false,
+  plugins:{legend:{labels:{boxWidth:12,font:{size:11}}},
+    tooltip:{callbacks:{label:c=>c.dataset.label+": "+baht(c.parsed.y)}}},
+  scales:{x:{grid:{color:GRID}},y:{grid:{color:GRID},ticks:{callback:v=>M(v)}}}};
+const waitMsg = 'รอ sync ครั้งถัดไป<br><span style="font-size:11px">(daily job จะเติมข้อมูลรายเดือนให้อัตโนมัติ)</span>';
+const waiting = id => { document.getElementById(id).innerHTML = '<div class="waitbox">'+waitMsg+'</div>'; };
+
+// charts (render if data present, else waitbox)
+if(D.sales_monthly && D.sales_monthly.receipt)
+  new Chart(salesChart,{type:"bar",data:{labels:D.months,datasets:[{label:"รับชำระ",data:D.sales_monthly.receipt,backgroundColor:"#34d399"}]},options:baseOpts});
+else waiting("salesArea");
+
+if(D.purchase_monthly && D.purchase_monthly.po)
+  new Chart(purChart,{type:"bar",data:{labels:D.months,datasets:[
+    {label:"PO",data:D.purchase_monthly.po,backgroundColor:"#fbbf24"},
+    {label:"GR",data:D.purchase_monthly.gr,backgroundColor:"#f472b6"}]},options:baseOpts});
+else waiting("purArea");
+
+if(D.stock_monthly && D.stock_monthly.value)
+  new Chart(stockChart,{type:"line",data:{labels:D.months,datasets:[
+    {label:"มูลค่าคงคลัง",data:D.stock_monthly.value,borderColor:"#38bdf8",backgroundColor:"rgba(56,189,248,.15)",fill:true,tension:.3}]},options:baseOpts});
+else waiting("stockArea");
+
+if(D.top_suppliers && D.top_suppliers.length){
+  const s=D.top_suppliers;
+  new Chart(supChart,{type:"bar",data:{labels:s.map(x=>x.name),datasets:[
+    {label:"PO",data:s.map(x=>x.po),backgroundColor:"#fbbf24"},
+    {label:"GR",data:s.map(x=>x.gr),backgroundColor:"#f472b6"}]},
+    options:{...baseOpts,indexAxis:"y",scales:{x:{grid:{color:GRID},ticks:{callback:v=>M(v)}},y:{grid:{color:GRID}}}}});
+} else waiting("supArea");
+</script>
+</body>
+</html>
