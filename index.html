@@ -113,8 +113,8 @@
   หมายเหตุ: AR Billing ในระบบว่าง — บริษัทบันทึกรายได้ผ่าน Receipt (รับชำระ) · dashboard นี้แยกอิสระจากหน้า Stock Remaining เดิม
 </div>
 
-<script src="erp_data.js"></script>
 <script>
+function init(){
 const D = window.ERP_DATA || {};
 const baht = n => (n==null? null : "฿" + Number(n).toLocaleString("en-US",{maximumFractionDigits:0}));
 const M    = n => (n>=1e6 ? (n/1e6).toFixed(1)+" ล" : (n/1e3).toFixed(0)+" พ");
@@ -177,6 +177,12 @@ if(D.top_suppliers && D.top_suppliers.length){
     {label:"GR",data:s.map(x=>x.gr),backgroundColor:"#f472b6"}]},
     options:{...baseOpts,indexAxis:"y",scales:{x:{grid:{color:GRID},ticks:{callback:v=>M(v)}},y:{grid:{color:GRID}}}}});
 } else waiting("supArea");
+}
+// โหลดข้อมูลสดทุกครั้ง (กัน cache) แล้วค่อย render
+fetch('erp_data.js?t=' + Date.now(), {cache:'no-store'})
+  .then(r => r.text())
+  .then(txt => { (0,eval)(txt); init(); })
+  .catch(e => { var b=document.getElementById('partialBanner'); b.className='banner show'; b.textContent='โหลดข้อมูลไม่ได้: '+e; });
 </script>
 </body>
 </html>
