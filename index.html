@@ -70,16 +70,16 @@
 <div class="grid k4">
   <div class="card"><div class="lab">ยอดรับชำระสะสม ปี 2026 (รวม VAT)</div><div class="val" id="k_receipt">—</div><div class="tag">Receipt List · YTD · ทุกโปรเจกต์</div><div class="bar" style="background:var(--green)"></div></div>
   <div class="card"><div class="lab">จำนวนใบเสร็จ (YTD)</div><div class="val" id="k_count">—</div><div class="tag">ฉบับ</div><div class="bar" style="background:var(--purple)"></div></div>
-  <div class="card"><div class="lab">ยอดคงค้าง AR (Balance)</div><div class="val" id="k_arout">—</div><div class="tag">ลูกหนี้คงเหลือ</div><div class="bar" style="background:var(--amber)"></div></div>
+  <div class="card"><div class="lab">รับชำระเฉลี่ย / เดือน</div><div class="val" id="k_arout">—</div><div class="tag">YTD ÷ จำนวนเดือน</div><div class="bar" style="background:var(--amber)"></div></div>
   <div class="card"><div class="lab">Retention (เงินประกันผลงาน)</div><div class="val" id="k_ret">—</div><div class="tag">หัก ณ ที่รับ</div><div class="bar" style="background:var(--blue)"></div></div>
 </div>
 
 <!-- ===== รอ sync ===== -->
-<h2>🛒 จัดซื้อ · สต็อก · รับเข้าคลัง <span class="pill real">PO จริงแล้ว</span> <span class="pill pend">สต็อก/GR รอ sync</span></h2>
+<h2>🛒 จัดซื้อ · รับเข้าคลัง · สต็อก <span class="pill real">PO + GR จริงแล้ว</span> <span class="pill pend">สต็อก รอไฟล์</span></h2>
 <div class="grid k4">
   <div class="card pending"><div class="lab">📦 มูลค่าสินค้าคงคลัง</div><div class="val wait" id="k_stock">รอ sync</div><div class="tag">ST_StockRemainingReport</div><div class="bar" style="background:var(--blue)"></div></div>
   <div class="card"><div class="lab">🛒 ยอดสั่งซื้อ PO (สะสม 2026)</div><div class="val" id="k_po">—</div><div class="tag">PUR PODetail · YTD · ทุกโปรเจกต์</div><div class="bar" style="background:var(--amber)"></div></div>
-  <div class="card pending"><div class="lab">📥 รับเข้าคลัง (GR) เดือนนี้</div><div class="val wait" id="k_gr">รอ sync</div><div class="tag">PUR_RSDetailReport</div><div class="bar" style="background:var(--pink)"></div></div>
+  <div class="card"><div class="lab">📥 รับเข้าคลัง GR (สะสม 2026)</div><div class="val" id="k_gr">—</div><div class="tag">PUR RSDetail · YTD · ทุกโปรเจกต์</div><div class="bar" style="background:var(--pink)"></div></div>
   <div class="card pending"><div class="lab">⏳ ค้างรับเข้าคลัง</div><div class="val wait" id="k_out">รอ sync</div><div class="tag">PUR_RSRemainDetailReport</div><div class="bar" style="background:var(--red)"></div></div>
 </div>
 
@@ -139,13 +139,16 @@ if(D.kpi){
   const k=D.kpi;
   set("k_receipt", baht(k.sales_receipt_ytd)+(k.sales_receipt_ytd!=null?'<span class="unit">บาท</span>':''));
   set("k_count",   k.receipt_count!=null? k.receipt_count.toLocaleString()+'<span class="unit">ฉบับ</span>' : null);
-  set("k_arout",   baht(k.ar_outstanding)+(k.ar_outstanding!=null?'<span class="unit">บาท</span>':''));
+  var avg = (k.sales_receipt_ytd!=null && D.months && D.months.length) ? k.sales_receipt_ytd/D.months.length : null;
+  set("k_arout",   baht(avg)+(avg!=null?'<span class="unit">บาท/เดือน</span>':''));
   set("k_ret",     baht(k.receipt_retention)+(k.receipt_retention!=null?'<span class="unit">บาท</span>':''));
   // po real (ytd)
   set("k_po", baht(k.po_ytd)+(k.po_ytd!=null?'<span class="unit">บาท</span>':''));
+  // gr real (ytd)
+  set("k_gr", baht(k.gr_ytd)+(k.gr_ytd!=null?'<span class="unit">บาท</span>':''));
   // pending
   set("k_stock", baht(k.stock_value));
-  set("k_gr", baht(k.gr_mtd)); set("k_out", baht(k.gr_outstanding));
+  set("k_out", baht(k.gr_outstanding));
 }
 const baseOpts = {responsive:true,maintainAspectRatio:false,
   plugins:{legend:{labels:{boxWidth:12,font:{size:11}}},
