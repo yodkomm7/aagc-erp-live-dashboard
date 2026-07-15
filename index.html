@@ -108,6 +108,23 @@
   </div>
 </div>
 
+<!-- ===== PROJECT HEALTH ===== -->
+<h2>🏗️ สุขภาพการเงินรายโครงการ <span class="pill real">Project Performance</span></h2>
+<div class="grid k4">
+  <div class="card"><div class="lab">มูลค่าสัญญารวม (Portfolio)</div><div class="val" id="p_contract">—</div><div class="tag" id="p_count">โครงการ</div><div class="bar" style="background:var(--blue)"></div></div>
+  <div class="card"><div class="lab">วางบิลแล้ว (Invoiced)</div><div class="val" id="p_billed">—</div><div class="tag" id="p_billpct">% ของสัญญา</div><div class="bar" style="background:var(--green)"></div></div>
+  <div class="card"><div class="lab">รับเงินแล้ว (Received)</div><div class="val" id="p_received">—</div><div class="tag" id="p_recpct">% ของสัญญา</div><div class="bar" style="background:var(--purple)"></div></div>
+  <div class="card"><div class="lab">จ่ายแล้ว (Paid)</div><div class="val" id="p_paid">—</div><div class="tag" id="p_paidpct">% ของสัญญา</div><div class="bar" style="background:var(--amber)"></div></div>
+</div>
+<div class="chartcard full" style="margin-top:14px">
+  <h3>Top 20 โครงการ — สัญญา · วางบิล · รับเงิน · จ่าย</h3>
+  <div class="note">แถบสี = %เก็บเงิน (รับ/สัญญา) · สีเขียว≥80% เหลือง≥50% แดง&lt;50%</div>
+  <table>
+    <thead><tr><th>โครงการ</th><th>มูลค่าสัญญา</th><th>วางบิล</th><th>รับเงิน</th><th>จ่าย</th><th>Net (รับ−จ่าย)</th><th>เก็บเงิน%</th></tr></thead>
+    <tbody id="projTable"></tbody>
+  </table>
+</div>
+
 <div class="src">
   รายงานต้นทาง (Pojjaman ERP): รายได้ <code>AR_ReceiptListReport</code> · สต็อก <code>ST_StockRemainingReport</code> · จัดซื้อ <code>PUR_PODetailReport</code> · รับเข้า <code>PUR_RSDetailReport</code> · ค้างรับ <code>PUR_RSRemainDetailReport</code><br>
   หมายเหตุ: AR Billing ในระบบว่าง — บริษัทบันทึกรายได้ผ่าน Receipt (รับชำระ) · dashboard นี้แยกอิสระจากหน้า Stock Remaining เดิม
@@ -182,6 +199,26 @@ if(D.top_suppliers && D.top_suppliers.length){
     {label:"GR",data:s.map(x=>x.gr),backgroundColor:"#f472b6"}]},
     options:{...baseOpts,indexAxis:"y",scales:{x:{grid:{color:GRID},ticks:{callback:v=>M(v)}},y:{grid:{color:GRID}}}}});
 } else waiting("supArea");
+
+// ===== Project Health =====
+if(D.projects){
+  const po=D.projects.portfolio, C=po.contract||0;
+  const pct=v=>C? Math.round(v/C*100):0;
+  set("p_contract", baht(po.contract)+'<span class="unit">บาท</span>');
+  document.getElementById("p_count").textContent = (po.count||0).toLocaleString()+" โครงการ";
+  set("p_billed", baht(po.billed)+'<span class="unit">บาท</span>');
+  document.getElementById("p_billpct").textContent = pct(po.billed)+"% ของสัญญา";
+  set("p_received", baht(po.received)+'<span class="unit">บาท</span>');
+  document.getElementById("p_recpct").textContent = pct(po.received)+"% ของสัญญา";
+  set("p_paid", baht(po.paid)+'<span class="unit">บาท</span>');
+  document.getElementById("p_paidpct").textContent = pct(po.paid)+"% ของสัญญา";
+  const col=p=>{ const r=p.contract? p.received/p.contract:0; return r>=.8?"var(--green)":r>=.5?"var(--amber)":"var(--red)"; };
+  document.getElementById("projTable").innerHTML = (D.projects.top||[]).map(p=>{
+    const r=p.contract? Math.round(p.received/p.contract*100):0;
+    const net=(p.received||0)-(p.paid||0);
+    return `<tr><td>${p.code} · ${p.name}</td><td>${baht(p.contract)}</td><td>${baht(p.billed)}</td><td>${baht(p.received)}</td><td>${baht(p.paid)}</td><td style="color:${net>=0?'var(--green)':'var(--red)'}">${baht(net)}</td>`+
+    `<td><div style="display:flex;align-items:center;gap:6px;justify-content:flex-end"><span>${r}%</span><span style="width:46px;height:6px;border-radius:6px;background:var(--panel2);overflow:hidden;display:inline-block"><span style="display:block;height:100%;width:${Math.min(r,100)}%;background:${col(p)}"></span></span></div></td></tr>`;
+  }).join("");
 }
 // โหลดข้อมูลสดทุกครั้ง (กัน cache) แล้วค่อย render
 fetch('erp_data.js?t=' + Date.now(), {cache:'no-store'})
